@@ -181,11 +181,10 @@ static void teo_decay(unsigned int *metric)
  */
 static void teo_update(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 {
-	s64 lat_ns = drv->states[dev->last_state_idx].exit_latency_ns;
+>>>>>>> 8f0978838be4 (UPSTREAM: cpuidle: teo: Use this_cpu_ptr() where possible)
 	struct teo_cpu *cpu_data = this_cpu_ptr(&teo_cpus);
 	int i, idx_timer = 0, idx_duration = 0;
 	s64 target_residency_ns, measured_ns;
->>>>>>> af7ef73a161c (UPSTREAM: cpuidle: governors: teo: Use s64 consistently in teo_update())
 
 	teo_decay(&cpu_data->short_idles);
 
@@ -527,8 +526,11 @@ out_tick:
 static void teo_reflect(struct cpuidle_device *dev, int state)
 {
 	struct teo_cpu *cpu_data = this_cpu_ptr(&teo_cpus);
+<<<<<<< HEAD
 
 	cpu_data->tick_wakeup = tick_nohz_idle_got_tick();
+=======
+>>>>>>> 8f0978838be4 (UPSTREAM: cpuidle: teo: Use this_cpu_ptr() where possible)
 
 	dev->last_state_idx = state;
 }

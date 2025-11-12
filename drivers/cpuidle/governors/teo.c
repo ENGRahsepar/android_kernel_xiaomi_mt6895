@@ -185,7 +185,7 @@ static void teo_update(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 	struct teo_cpu *cpu_data = this_cpu_ptr(&teo_cpus);
 	int i, idx_timer = 0, idx_duration = 0;
 	s64 target_residency_ns, measured_ns;
-	unsigned int total = 0;
+>>>>>>> af7ef73a161c (UPSTREAM: cpuidle: governors: teo: Use s64 consistently in teo_update())
 
 	teo_decay(&cpu_data->short_idles);
 
@@ -197,6 +197,7 @@ static void teo_update(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 		 */
 		measured_ns = S64_MAX;
 	} else {
+<<<<<<< HEAD
 		measured_ns = dev->last_residency_ns;
 		/*
 		 * The delay between the wakeup and the first instruction

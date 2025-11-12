@@ -239,32 +239,7 @@ static void teo_update(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 	cpu_data->total = total + PULSE;
 
 	teo_decay(&cpu_data->tick_intercepts);
-
-	teo_decay(&cpu_data->total_tick);
-	if (cpu_data->tick_wakeup) {
-		cpu_data->total_tick += PULSE;
-		/*
-		 * If tick wakeups dominate the wakeup pattern, count this one
-		 * as a hit on the deepest available idle state to increase the
-		 * likelihood of stopping the tick.
-		 */
-		if (3 * cpu_data->total_tick > 2 * cpu_data->total) {
-			cpu_data->state_bins[drv->state_count-1].hits += PULSE;
-			return;
-		}
-		/*
-		 * If intercepts within the tick period range are not frequent
-		 * enough, count this wakeup as a hit, since it is likely that
-		 * the tick has woken up the CPU because an expected intercept
-		 * was not there.  Otherwise, one of the intercepts may have
-		 * been incidentally preceded by the tick wakeup.
-		 */
-		if (3 * cpu_data->tick_intercepts < 2 * total) {
-			cpu_data->state_bins[idx_timer].hits += PULSE;
-			return;
-		}
-	}
-
+>>>>>>> 9e95bf47260f (UPSTREAM: cpuidle: governors: teo: Decay metrics below DECAY_SHIFT threshold)
 	/*
 	 * If the measured idle duration (adjusted for the entered state exit
 	 * latency) falls into the same bin as the sleep length and the latter
@@ -283,6 +258,7 @@ static void teo_update(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 		if (measured_ns <= TICK_NSEC)
 			cpu_data->tick_intercepts += PULSE;
 	}
+<<<<<<< HEAD
 }
 
 /**

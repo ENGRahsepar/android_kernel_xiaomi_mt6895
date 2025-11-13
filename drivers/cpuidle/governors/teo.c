@@ -463,6 +463,81 @@ static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 	 * non-timer wakeups to be dominant and skip updating the sleep length
 	 * to reduce latency.
 	 */
+<<<<<<< HEAD
+=======
+	if ((!idx || drv->states[idx].target_residency_ns < RESIDENCY_THRESHOLD_NS) &&
+	    (2 * cpu_data->short_idles >= cpu_data->total ||
+	     latency_req < LATENCY_THRESHOLD_NS))
+		goto out_tick;
+
+	duration_ns = tick_nohz_get_sleep_length(&delta_tick);
+	cpu_data->sleep_length_ns = duration_ns;
+
+	if (!idx)
+		goto out_tick;
+
+	/*
+	 * If the closest expected timer is before the target residency of the
+	 * candidate state, a shallower one needs to be found.
+	 */
+	if (drv->states[idx].target_residency_ns > duration_ns)
+		idx = teo_find_shallower_state(drv, dev, idx, duration_ns);
+
+	/*
+	 * If the selected state's target residency is below the tick length
+	 * and intercepts occurring before the tick length are the majority of
+	 * total wakeup events, do not stop the tick.
+	 */
+	if (drv->states[idx].target_residency_ns < TICK_NSEC &&
+	    cpu_data->tick_intercepts > cpu_data->total / 2 + cpu_data->total / 8)
+		duration_ns = TICK_NSEC / 2;
+
+end:
+	/*
+	 * Allow the tick to be stopped unless the selected state is a polling
+	 * one or the expected idle duration is shorter than the tick period
+	 * length.
+	 */
+	if ((!(drv->states[idx].flags & CPUIDLE_FLAG_POLLING) &&
+	    duration_ns >= TICK_NSEC) || tick_nohz_tick_stopped())
+		return idx;
+
+	/*
+	 * The tick is not going to be stopped, so if the target residency of
+	 * the state to be returned is not within the time till the closest
+	 * timer including the tick, try to correct that.
+	 */
+	if (idx > idx0 &&
+	    drv->states[idx].target_residency_ns > delta_tick)
+		idx = teo_find_shallower_state(drv, dev, idx, delta_tick);
+
+out_tick:
+	*stop_tick = false;
+	return idx;
+}
+
+/**
+ * teo_reflect - Note that governor data for the CPU need to be updated.
+ * @dev: Target CPU.
+ * @state: Entered state.
+ */
+static void teo_reflect(struct cpuidle_device *dev, int state)
+{
+	struct teo_cpu *cpu_data = this_cpu_ptr(&teo_cpus);
+
+	dev->last_state_idx = state;
+	if (dev->poll_time_limit ||
+	    (tick_nohz_idle_got_tick() && cpu_data->sleep_length_ns > TICK_NSEC)) {
+		/*
+		 * The wakeup was not "genuine", but triggered by one of the
+		 * safety nets.
+		 */
+		dev->poll_time_limit = false;
+		cpu_data->artificial_wakeup = true;
+	} else {
+		cpu_data->artificial_wakeup = false;
+	}
+>>>>>>> cb131cd92776 (UPSTREAM: cpuidle: governors: teo: Drop misguided target residency check)
 }
 
 /**

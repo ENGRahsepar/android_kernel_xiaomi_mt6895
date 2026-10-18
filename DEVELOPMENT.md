@@ -19,11 +19,11 @@ without any prior session knowledge.
   ROM support target: Android 16/17 custom ROMs (A17 boot verified Sep 2026 on
    `Angxddeep/android_kernel_xiaomi_mt6895:seventeen` @ 5.10.264 — our 5.10.270
    is a strict superset; binderfs/ashmem present, LXC USER_NS via builder).
-- **Current stable sublevel:** **5.10.271** (tracked; check kernel.org for newer).
+- **Current stable sublevel:** **5.10.272** (tracked; check kernel.org for newer).
 - **Localversion convention:** `CONFIG_LOCALVERSION="-ESK-Reborn_V0.X"` in
-  `arch/arm64/configs/vendor/xaga.config` — **bump per release** (V0.3.1 on both
+  `arch/arm64/configs/vendor/xaga.config` — **bump per release** (V0.3.2 on both
   branches since Oct 2026 (was V0.3); the `17.0` V17.0 bump was reverted in `0edb2f37`).
-  `uname -r` shows `5.10.271-android12-...-ESK-Reborn_V0.3.1/<git-sha12>`.
+  `uname -r` shows `5.10.272-android12-...-ESK-Reborn_V0.3.2/<git-sha12>`.
 
 ---
 
@@ -455,7 +455,10 @@ Commit message format (Android Common Kernel rules):
 | 0.1 | 0.1 | 5.10.266 (dd3b1030/f8e3dbe2 era) | First public; VNL/KSU-SUSFS/KSU-SUSFS-LXC |
 | 0.2 | 0.2 | 5.10.268 (03e2cd2b) | 5.10.267/268 merges, huge_memory fix |
 | 0.3 Beta 1 | 0.3 (renamed) | 5.10.268→269 era | **WITHDRAWN** — freezes (ESK deadlocks, later binder+le9uo) |
-| **0.3 (current, stable)** | 0.3 | `e4428edd3ad6` | 5.10.270, all crash fixes, ESK v2.2 opt-in, bypass charging; KSU-SUSFS-LXC + modules live, VNL/KSU-SUSFS pending |
+| 0.3 | 0.3 | `e4428edd3ad6` | 5.10.270, all crash fixes, ESK v2.2 opt-in, bypass charging; KSU-SUSFS-LXC + modules live, VNL/KSU-SUSFS pending |
+| 0.3.1 | 0.3.1 | 5.10.271 (conntrack 271 fix era) | Localversion bump V0.3 → V0.3.1 on both branches; 5.10.272 merge prepared |
+| **0.3.2 (current)** | 0.3.2 | 5.10.272 (3c27474e merge) | Localversion bump V0.3.1 → V0.3.2; tree source (5.10.272) newer than 0.3's 5.10.270 release base |
+| 0.4 (planned) | — | — | Vorpal v2.2 port + ESK default + fps/battery tuning |
 | 0.3.1/0.4 (planned) | — | — | Vorpal v2.2 port + ESK default + fps/battery tuning |
 
 ---
@@ -606,7 +609,7 @@ fixes all known regressions but has less cumulative on-device hours than 0.2.
 
 ## 16. CURRENT PROJECT STATUS & ROADMAP (as of this document)
 
-**State: 0.3.1 (5.10.271, V0.3.1 localversion; PUSHED + verified Oct 2026 on both branches — tips: `git log --oneline origin/16.2-rebase -1` / `origin/17.0 -1`).** ESK v2.2,
+**State: 0.3.2 (5.10.272, V0.3.2 localversion; PUSHED + verified Oct 2026 on both branches — tips: `git log --oneline origin/16.2-rebase -1` / `origin/17.0 -1`).** ESK v2.2,
 - **Branch-divergence decision (Oct 2026, user-confirmed): `157418db` (PAN) + `15e0e52d` (mtk-mml) stay `17.0`-ONLY**, not mirrored to `16.2-rebase` (A17-flavored; `16.2-rebase` serves 16.x ROMs). Do NOT "fix" this divergence with a branch merge.
 - **Upstream watch: `ESK-Project/android_kernel_xiaomi_mt6895:main` (Oct 3 2026)** carries a scheduler modernization we do NOT have: BORE 6.8.0 + 6.12-era EEVDF (delayed dequeue, run-to-parity, slice protection, lag placement, O(1) fastpath) on a 5.10.269 base. It does NOT have our ESK governor / NoMount / BBRplus. Port = dedicated project (fair.c rewrite zone), not a merge.
 Templar stable fixes (EEVDF rescale, BORE weight, yield), le9uo/mali

@@ -470,7 +470,7 @@ Commit message format (Android Common Kernel rules):
 | 0.3 Beta 1 | 0.3 (renamed) | 5.10.268→269 era | **WITHDRAWN** — freezes (ESK deadlocks, later binder+le9uo) |
 | 0.3 | 0.3 | `e4428edd3ad6` | 5.10.270, all crash fixes, ESK v2.2 opt-in, bypass charging; KSU-SUSFS-LXC + modules live, VNL/KSU-SUSFS pending |
 | 0.3.1 | 0.3.1 | 5.10.271 (conntrack 271 fix era) | Localversion bump V0.3 → V0.3.1 on both branches; 5.10.272 merge prepared |
-| **0.3.2 (current)** | 0.3.2 | 5.10.272 (3c27474e merge) | Localversion bump V0.3.1 → V0.3.2; tree source (5.10.272) newer than 0.3's 5.10.270 release base |
+| **0.3.2 (current)** | 0.3.2 | `50dd6b311df7` | **PUBLISHED 2026-10-20** (gh release create --latest; https://github.com/ENGRahsepar/ESK-Kernel-Reborn-Releases/releases/tag/0.3.2) — 5.10.272 base; all 3 kernel variants verified (`Linux version 5.10.272-ESK-Reborn_V0.3.2/50dd6b31`) before upload; assets = `ESK-Reborn-5.10.272-KSU-SUSFS-50dd6b311df7-AnyKernel3.zip`, `ESK-Reborn-5.10.272-KSU-SUSFS-LXC-50dd6b311df7-AnyKernel3.zip`, `ESK-Reborn-5.10.272-VNL-50dd6b311df7-AnyKernel3.zip`, `BakaSU_v4.2.0-rc3_35235-universal-release.apk` (manager v4.2.0-rc3-10cada74 verified in-image), `module.tar.xz` (608 modules); Builds table + what's-new (271/272, conntrack fix, BakaSU rename/sync-susfs/SUSFS `ca7093a` pairing) in release body; **0.3.1 never shipped as release** (only localversion bump) |
 | 0.4 (planned) | — | — | Vorpal v2.2 port + ESK default + fps/battery tuning |
 | 0.3.1/0.4 (planned) | — | — | Vorpal v2.2 port + ESK default + fps/battery tuning |
 

@@ -48,7 +48,15 @@ without any prior session knowledge.
      uses ANDROID_KABI_RESERVE(6/7/8) in `include/linux/sched.h`; ESK's BORE uses reserves 1-4,
      no conflict)
   3. `stock_config.patch` (only for stock builds)
-  4. KernelSU variants: clones `Baka-SU/BakaSU` (branch main; renamed from ReSukiSU Oct 2026 — same `drivers/kernelsu` + `CONFIG_KSU`/`CONFIG_KSU_SUSFS` interface), enables `CONFIG_KSU`
+   4. KernelSU variants: clones `ENGRahsepar/BakaSU` (fork of `Baka-SU/BakaSU`, renamed from
+      ReSukiSU Oct 2026 — same `drivers/kernelsu` + `CONFIG_KSU`/`CONFIG_KSU_SUSFS` interface), enables `CONFIG_KSU`.
+      **Fork main = upstream main + revert of upstream `48fa4bb7` "suspend susfs build"`** — upstream BakaSU
+      (since Oct 10 2026, v4.2.0-rc3) hard-fails every `CONFIG_KSU_SUSFS` build (unconditional `$(error)`
+      in `kernel/tools/susfs_compat.mk`) because SUSFS kernel-side hasn't been synced with the latest
+      KernelSU `selinux_hide` internals; `ksu_handle_*` inline checks + `ksu_install_su_fd` all pass.
+      Fork: https://github.com/ENGRahsepar/BakaSU (`99c7e990`). SUSFS fork: https://github.com/ENGRahsepar/susfs4ksu
+      (mirror push of `gki-android12-5.10` only; GitHub can't fork GitLab). **Switch builder back to upstream
+      `Baka-SU/BakaSU` `main` once BakaSU un-suspends susfs (watch `susfs_compat.mk`)**
   5. Variants: VNL (vanilla), KSU-SUSFS, KSU-SUSFS-LXC (LXC flag applies lxc_support.patch)
 - **Toolchain:** Android clang (currently r596125-based, "clang 22.0.2") at `~/esk_builder/clang/`.
   Build flags: `LLVM=1 LLVM_IAS=1`, `ARCH=arm64`, out-dir = `~/esk_builder/work`,
@@ -448,6 +456,7 @@ Commit message format (Android Common Kernel rules):
 | `a0a4da23` | **5.10.271 stable merge** (from `16.2-rebase`, merged into `17.0` as `7590bfa5`): 582 files / 589 upstream commits, 1 conflict (`net/xfrm/xfrm_user.c` — kept GKI variant, see §2). Upstream highlights: cpufreq `zalloc_cpumask` + rwsem init order, xfrm verify extack strings + `xfrm_net_nlsk` helper, Bluetooth L2CAP/RFCOMM + NFC llcp hardening. Compile clean (builder clang): xfrm_user, cpufreq, schedutil, esk, fair, memcontrol, vmscan, platform, xhci-ring, irqdomain, inet_connection_sock, v4l2-ctrls, remoteproc_core, cgroup, bbr, bbrplus |
 | `e455e426` | **271 build fix** (`net/xfrm/xfrm_user.c`): `xfrm_net_nlsk()` `sk` → `__maybe_unused` — carried into `17.0` by `7590bfa5` (single merge; earlier two-merge layout superseded by sign-off rewrite) |
 | — | **Builder: KernelSU source `ReSukiSU/ReSukiSU` → `Baka-SU/BakaSU`** (upstream rename Oct 2026; same `kernel/setup.sh <ref>` interface, same `drivers/kernelsu` symlink + `CONFIG_KSU`/`CONFIG_KSU_SUSFS` symbols, SUSFS menu intact — builder flow unchanged; `build/setup.sh` + builder README updated, §1.1/§11 synced). Next KSU-variant build exercises it live |
+| — | **Builder: BakaSU susfs-suspend worked around (2026-10-20)** — first live BakaSU build (Oct 20, v4.2.0-rc3-`7c383cfe`) failed at `drivers/kernelsu`: upstream `48fa4bb7` "kernel: suspend susfs build" (Oct 10 2026) adds unconditional `$(error)` in `kernel/tools/susfs_compat.mk` — SUSFS kernel-side hasn't synced latest KernelSU `selinux_hide` internals, all `ksu_handle_*` inline checks nevertheless PASSED (log). Fix: forks **`ENGRahsepar/BakaSU`** (upstream main `7c383cfe` + revert `99c7e990` — latest BakaSU code, only the suspension removed) + **`ENGRahsepar/susfs4ksu`** (mirror push, `gki-android12-5.10` @ `f43926d`, SUSFS v2.3.0 = latest; GitHub can't fork GitLab). `build/setup.sh` `install_ksu` → `ENGRahsepar/BakaSU@main`; local `~/esk_builder/kernel/KernelSU` on `lifted-ksu` = `99c7e990`. Compile-verified: `drivers/kernelsu/` full dir clean (builder clang, §1.2). Known tradeoff: upstream suspended to avoid `selinux_hide` time side-channel detections until simonpunk syncs SUSFS — detection risk returns until that lands; pinned as such in `setup.sh`, switch back to upstream `Baka-SU/BakaSU@main` when fixed |
 | `157418db` | **xaga: ARM64_SW_TTBR0_PAN** in `vendor/xaga.config` (A17 VINTF FCM level 7 requirement). Pushed by user direct to `17.0` (17.0-only, NOT on `16.2-rebase`) |
 | `15e0e52d` | **mtk-mml video playback + in-kernel scaling fix** (Angaddeep Singh, via `angx` upstream): `-EBUSY` fallback to initial config on `dup_task`; new `mtk-mml-rsz-fw.c/h` (in-kernel resizer firmware calc, ported from Nothing MT6886 5.15). Pushed by user direct to `17.0` (17.0-only). Mml objects compile-verified (builder clang) |
 | `2989dbe0` | **Merge origin/17.0 into 17.0** — takes the 2 commits above on top of 271 merge `7590bfa5`; clean auto-merge. Both branches pushed + verified Oct 2026 |
@@ -485,7 +494,8 @@ Commit message format (Android Common Kernel rules):
 - BBRplus 5.10: https://github.com/UJX6N/bbrplus-5.10 (convert_official_linux-5.10.x_src_to_bbrplus.patch)
 - google/bbr: https://github.com/google/bbr (v3 branch; in-tree bbr is already v3)
 - SuSFS: https://gitlab.com/simonpunk/susfs4ksu (branch gki-android12-5.10; builder pulls it)
-- BakaSU (renamed from ReSukiSU Oct 2026): https://github.com/Baka-SU/BakaSU (builder installs on KSU variants; old `ReSukiSU/ReSukiSU` URL redirects)
+- BakaSU (renamed from ReSukiSU Oct 2026): https://github.com/Baka-SU/BakaSU (upstream; **builder uses our fork `ENGRahsepar/BakaSU` until BakaSU re-enables susfs builds** — see §10 2026-10-20 row)
+- SUSFS: https://gitlab.com/simonpunk/susfs4ksu (upstream, branch `gki-android12-5.10` @ `f43926d`); GitHub mirror/fork: https://github.com/ENGRahsepar/susfs4ksu
 - KernelSU (base): https://github.com/tiann/KernelSU
 - AIK/AnyKernel3: https://github.com/osm0sis/AnyKernel3 (builder's AK3 template)
 - Linux upstream EAS/EEVDF reference: EEVDF merged in v6.6 (`5f50b5a2` series by Peter Zijlstra)

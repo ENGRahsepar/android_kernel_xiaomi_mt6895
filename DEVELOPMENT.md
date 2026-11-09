@@ -680,3 +680,6 @@ GitHub owner renamed `AKALIorg` → `ENGRahsepar` (Oct 2026; remotes/docs update
 - Prefer downloading donor files raw over cloning donor repos (unless multi-file).
 - Keep local clones: kernel (always), releases repo (/tmp/opencode/esk-releases),
   susfs (/tmp/opencode/susfs — re-clone when needed, /tmp wiped on reboot).
+
+| `1eafbcae9` | **5.10.274 stable merge** — 521 upstream commits / 500 files, 17 conflicts. Took upstream: nfsd cr_type sanitization, fsnotify HAS_IREF/DESTROYING flags, fwnode secondary iteration fix. Kept HEAD: ARM64 errata configs (TSB_FLUSH_FAILURE, 2457168, etc.), F2FS gc_thread pointer variant + GC_MERGE, mmap __vma_merge path, Bluetooth HCI hdev->name char array, net_cookie atomic64_t, tick broadcast GKI per-cpu oneshot wakeup variant, cpucaps added BROKEN_AMU_CONSTCNT at slot 66. KABI reserves 1-4 intact, SUBLEVEL 274. Compile-tested clean (builder clang: schedutil, esk, fair, memcontrol, vmscan, platform, xhci-ring, irqdomain, inet_connection_sock, v4l2-ctrls, remoteproc_core, cgroup, bbr, bbrplus). |
+

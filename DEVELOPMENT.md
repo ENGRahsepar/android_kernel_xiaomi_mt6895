@@ -683,3 +683,6 @@ GitHub owner renamed `AKALIorg` → `ENGRahsepar` (Oct 2026; remotes/docs update
 
 | `1eafbcae9` | **5.10.274 stable merge** — 521 upstream commits / 500 files, 17 conflicts. Took upstream: nfsd cr_type sanitization, fsnotify HAS_IREF/DESTROYING flags, fwnode secondary iteration fix. Kept HEAD: ARM64 errata configs (TSB_FLUSH_FAILURE, 2457168, etc.), F2FS gc_thread pointer variant + GC_MERGE, mmap __vma_merge path, Bluetooth HCI hdev->name char array, net_cookie atomic64_t, tick broadcast GKI per-cpu oneshot wakeup variant, cpucaps added BROKEN_AMU_CONSTCNT at slot 66. KABI reserves 1-4 intact, SUBLEVEL 274. Compile-tested clean (builder clang: schedutil, esk, fair, memcontrol, vmscan, platform, xhci-ring, irqdomain, inet_connection_sock, v4l2-ctrls, remoteproc_core, cgroup, bbr, bbrplus). |
 
+
+| `771bf86c` | **ESK-Project 16.2-rebase sync** — merged `ESK-Project/android_kernel_xiaomi_mt6895@16.2-rebase` (23 commits): DTBO building + xaga/plato DTSIs, cpufreq-hw thermal pressure accounting, RCU NOCB kernel param + disable RCU boosting, LZ4 fixes, TEO cpuidle governor prioritization + upstream TEO fixes (tick wakeup rework, intercept decay, state lookup simplification). TEO compile fix for broken teo_select function. TEO uses `this_cpu_ptr()` + `per_cpu_ptr()` consistently. |
+

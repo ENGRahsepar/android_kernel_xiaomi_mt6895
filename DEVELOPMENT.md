@@ -686,3 +686,6 @@ GitHub owner renamed `AKALIorg` → `ENGRahsepar` (Oct 2026; remotes/docs update
 
 | `771bf86c` | **ESK-Project 16.2-rebase sync** — merged `ESK-Project/android_kernel_xiaomi_mt6895@16.2-rebase` (23 commits): DTBO building + xaga/plato DTSIs, cpufreq-hw thermal pressure accounting, RCU NOCB kernel param + disable RCU boosting, LZ4 fixes, TEO cpuidle governor prioritization + upstream TEO fixes (tick wakeup rework, intercept decay, state lookup simplification). TEO compile fix for broken teo_select function. TEO uses `this_cpu_ptr()` + `per_cpu_ptr()` consistently. |
 
+
+| `b02bd1ca1` | **NoMount v2.0.0 + Droidspaces/LXC** — NoMount upgraded from v1.1.1 (keyring API) to v2.0.0 (patchless dcache hijack, Bloom filter child indexing, UID isolation, RCU-safe rule lookups) from maxsteeel/nomount@master. Droidspaces/LXC: all required GKI configs enabled in vendor fragment (namespaces, cgroups, netfilter, net_bridge, seccomp, devtmpfs, overlayfs, etc.). LXC kABI patches applied: ANDROID_KABI_RESERVE(6,7,8) in sched.h for SYSVIPC/IPC_NS/POSIX_MQUEUE ABI safety. lxc_support.patch applied to source (gki_defconfig + sched.h changes). |
+

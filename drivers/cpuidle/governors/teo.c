@@ -150,7 +150,7 @@ struct teo_bin {
  * @total_tick: Wakeups by the scheduler tick.
  * @tick_intercepts: "Intercepts" before TICK_NSEC.
  * @short_idles: Wakeups after short idle periods.
- * @tick_wakeup: Set if the last wakeup was by the scheduler tick.
+ * @artificial_wakeup: Set if the wakeup has been triggered by a safety net.
  */
 struct teo_cpu {
 	s64 sleep_length_ns;
@@ -159,7 +159,7 @@ struct teo_cpu {
 	unsigned int total_tick;
 	unsigned int tick_intercepts;
 	unsigned int short_idles;
-	bool tick_wakeup;
+	bool artificial_wakeup;
 };
 
 static DEFINE_PER_CPU(struct teo_cpu, teo_cpus);
@@ -181,22 +181,22 @@ static void teo_decay(unsigned int *metric)
  */
 static void teo_update(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 {
-	s64 lat_ns = drv->states[dev->last_state_idx].exit_latency_ns;
+>>>>>>> 8f0978838be4 (UPSTREAM: cpuidle: teo: Use this_cpu_ptr() where possible)
 	struct teo_cpu *cpu_data = this_cpu_ptr(&teo_cpus);
 	int i, idx_timer = 0, idx_duration = 0;
 	s64 target_residency_ns, measured_ns;
-	unsigned int total = 0;
 
 	teo_decay(&cpu_data->short_idles);
 
-	if (dev->poll_time_limit) {
-		dev->poll_time_limit = false;
+	if (cpu_data->artificial_wakeup) {
 		/*
 		 * Polling state timeout has triggered, so assume that this
 		 * might have been a long sleep.
 		 */
 		measured_ns = S64_MAX;
 	} else {
+		u64 lat_ns = drv->states[dev->last_state_idx].exit_latency_ns;
+
 		measured_ns = dev->last_residency_ns;
 		/*
 		 * The delay between the wakeup and the first instruction
@@ -222,10 +222,8 @@ static void teo_update(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 	for (i = 0; i < drv->state_count; i++) {
 		struct teo_bin *bin = &cpu_data->state_bins[i];
 
-		teo_decay(&bin->hits);
-		total += bin->hits;
-		teo_decay(&bin->intercepts);
-		total += bin->intercepts;
+		bin->hits -= bin->hits >> DECAY_SHIFT;
+		bin->intercepts -= bin->intercepts >> DECAY_SHIFT;
 
 		target_residency_ns = drv->states[i].target_residency_ns;
 
@@ -236,53 +234,29 @@ static void teo_update(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 		}
 	}
 
-	cpu_data->total = total + PULSE;
-
-	teo_decay(&cpu_data->tick_intercepts);
-
-	teo_decay(&cpu_data->total_tick);
-	if (cpu_data->tick_wakeup) {
-		cpu_data->total_tick += PULSE;
-		/*
-		 * If tick wakeups dominate the wakeup pattern, count this one
-		 * as a hit on the deepest available idle state to increase the
-		 * likelihood of stopping the tick.
-		 */
-		if (3 * cpu_data->total_tick > 2 * cpu_data->total) {
-			cpu_data->state_bins[drv->state_count-1].hits += PULSE;
-			return;
-		}
-		/*
-		 * If intercepts within the tick period range are not frequent
-		 * enough, count this wakeup as a hit, since it is likely that
-		 * the tick has woken up the CPU because an expected intercept
-		 * was not there.  Otherwise, one of the intercepts may have
-		 * been incidentally preceded by the tick wakeup.
-		 */
-		if (3 * cpu_data->tick_intercepts < 2 * total) {
-			cpu_data->state_bins[idx_timer].hits += PULSE;
-			return;
-		}
-	}
-
+	cpu_data->tick_intercepts -= cpu_data->tick_intercepts >> DECAY_SHIFT;
 	/*
-	 * If the measured idle duration (adjusted for the entered state exit
-	 * latency) falls into the same bin as the sleep length and the latter
-	 * is less than the "raw" measured idle duration (so the wakeup appears
-	 * to have occurred after the anticipated timer event), this is a "hit",
-	 * so update the "hits" metric for that bin.
-	 *
+	 * If the measured idle duration falls into the same bin as the sleep
+	 * length, this is a "hit", so update the "hits" metric for that bin.
 	 * Otherwise, update the "intercepts" metric for the bin fallen into by
 	 * the measured idle duration.
 	 */
-	if (idx_timer == idx_duration &&
-	    cpu_data->sleep_length_ns - measured_ns < lat_ns / 2) {
+	if (idx_timer == idx_duration) {
 		cpu_data->state_bins[idx_timer].hits += PULSE;
 	} else {
 		cpu_data->state_bins[idx_duration].intercepts += PULSE;
-		if (measured_ns <= TICK_NSEC)
+		if (TICK_NSEC <= measured_ns)
 			cpu_data->tick_intercepts += PULSE;
 	}
+
+	cpu_data->total -= cpu_data->total >> DECAY_SHIFT;
+	cpu_data->total += PULSE;
+}
+
+static bool teo_state_ok(int i, struct cpuidle_driver *drv)
+{
+	return !tick_nohz_tick_stopped() ||
+		drv->states[i].target_residency_ns >= TICK_NSEC;
 }
 
 /**
@@ -318,15 +292,13 @@ static int teo_find_shallower_state(struct cpuidle_driver *drv,
 static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 		      bool *stop_tick)
 {
-	struct teo_cpu *cpu_data = this_cpu_ptr(&teo_cpus);
+	struct teo_cpu *cpu_data = per_cpu_ptr(&teo_cpus, dev->cpu);
 	s64 latency_req = cpuidle_governor_latency_req(dev->cpu);
 	ktime_t delta_tick = TICK_NSEC / 2;
 	unsigned int idx_intercept_sum = 0;
 	unsigned int intercept_sum = 0;
-	unsigned int intercept_max = 0;
 	unsigned int idx_hit_sum = 0;
 	unsigned int hit_sum = 0;
-	int intercept_max_idx = -1;
 	int constraint_idx = 0;
 	int idx0 = 0, idx = -1;
 	s64 duration_ns;
@@ -348,35 +320,26 @@ static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 	 */
 	cpu_data->sleep_length_ns = KTIME_MAX;
 
+	/* Check if there is any choice in the first place. */
+	if (drv->state_count < 2) {
+		idx = 0;
+		goto out_tick;
+	}
+
 	if (!dev->states_usage[0].disable)
 		idx = 0;
 
-	/*
-	 * Compute the sums of metrics for early wakeup pattern detection and
-	 * look for the state bin with the maximum intercepts metric below the
-	 * deepest enabled one (if there are multiple states with the maximum
-	 * intercepts metric, choose the one with the highest index).
-	 */
+	/* Compute the sums of metrics for early wakeup pattern detection. */
 	for (i = 1; i < drv->state_count; i++) {
 		struct teo_bin *prev_bin = &cpu_data->state_bins[i-1];
-		unsigned int prev_intercepts = prev_bin->intercepts;
 		struct cpuidle_state *s = &drv->states[i];
 
 		/*
-		 * Update the sums of idle state metrics for all of the states
+		 * Update the sums of idle state mertics for all of the states
 		 * shallower than the current one.
 		 */
+		intercept_sum += prev_bin->intercepts;
 		hit_sum += prev_bin->hits;
-		intercept_sum += prev_intercepts;
-		/*
-		 * Check if this is the bin with the maximum number of
-		 * intercepts so far and in that case update the index of
-		 * the state with the maximum intercepts metric.
-		 */
-		if (prev_intercepts >= intercept_max) {
-			intercept_max = prev_intercepts;
-			intercept_max_idx = i - 1;
-		}
 
 		if (dev->states_usage[i].disable)
 			continue;
@@ -417,21 +380,59 @@ static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 	 * better choice.
 	 */
 	if (2 * idx_intercept_sum > cpu_data->total - idx_hit_sum) {
+		int first_suitable_idx = idx;
+
 		/*
-		 * Look for the deepest enabled idle state, at most as deep as
-		 * the one with the maximum intercepts metric, whose target
-		 * residency had not been greater than the idle duration in over
-		 * a half of the relevant cases in the past.
+		 * Look for the deepest idle state whose target residency had
+		 * not exceeded the idle duration in over a half of the relevant
+		 * cases in the past.
+		 *
+		 * Take the possible duration limitation present if the tick
+		 * has been stopped already into account.
 		 */
-		for (i = idx - 1, intercept_sum = 0; i >= idx0; i--) {
-			intercept_sum += cpu_data->state_bins[i].intercepts;
+		intercept_sum = 0;
+
+		for (i = idx - 1; i >= 0; i--) {
+			struct teo_bin *bin = &cpu_data->state_bins[i];
+
+			intercept_sum += bin->intercepts;
+
+			if (2 * intercept_sum > idx_intercept_sum) {
+				/*
+				 * Use the current state unless it is too
+				 * shallow or disabled, in which case take the
+				 * first enabled state that is deep enough.
+				 */
+				if (teo_state_ok(i, drv) &&
+				    !dev->states_usage[i].disable) {
+					idx = i;
+					break;
+				}
+				idx = first_suitable_idx;
+				break;
+			}
 
 			if (dev->states_usage[i].disable)
 				continue;
 
-			idx = i;
-			if (2 * intercept_sum > idx_intercept_sum &&
-			    i <= intercept_max_idx)
+			if (teo_state_ok(i, drv)) {
+				/*
+				 * The current state is deep enough, but still
+				 * there may be a better one.
+				 */
+				first_suitable_idx = i;
+				continue;
+			}
+
+			/*
+			 * The current state is too shallow, so if no suitable
+			 * states other than the initial candidate have been
+			 * found, give up (the remaining states to check are
+			 * shallower still), but otherwise the first suitable
+			 * state other than the initial candidate may turn out
+			 * to be preferable.
+			 */
+			if (first_suitable_idx == idx)
 				break;
 		}
 	}
@@ -444,13 +445,13 @@ static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 		idx = constraint_idx;
 
 	/*
-	 * If the tick has not been stopped and either the candidate state is
-	 * state 0 or its target residency is low enough, there is basically
-	 * nothing more to do, but if the sleep length is not updated, the
-	 * subsequent wakeup will be counted as an "intercept".  That may be
-	 * problematic in the cases when timer wakeups are dominant because it
-	 * may effectively prevent deeper idle states from being selected at one
-	 * point even if no imminent timers are scheduled.
+	 * If either the candidate state is state 0 or its target residency is
+	 * low enough, there is basically nothing more to do, but if the sleep
+	 * length is not updated, the subsequent wakeup will be counted as an
+	 * "intercept" which may be problematic in the cases when timer wakeups
+	 * are dominant.  Namely, it may effectively prevent deeper idle states
+	 * from being selected at one point even if no imminent timers are
+	 * scheduled.
 	 *
 	 * However, frequent timers in the RESIDENCY_THRESHOLD_NS range on one
 	 * CPU are unlikely (user space has a default 50 us slack value for
@@ -461,43 +462,16 @@ static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 	 * duration falls into that range in the majority of cases, assume
 	 * non-timer wakeups to be dominant and skip updating the sleep length
 	 * to reduce latency.
-	 *
-	 * Also, if the latency constraint is sufficiently low, it will force
-	 * shallow idle states regardless of the wakeup type, so the sleep
-	 * length need not be known in that case.
 	 */
-	if (!tick_nohz_tick_stopped() && (!idx ||
-	     drv->states[idx].target_residency_ns < RESIDENCY_THRESHOLD_NS) &&
+<<<<<<< HEAD
+=======
+	if ((!idx || drv->states[idx].target_residency_ns < RESIDENCY_THRESHOLD_NS) &&
 	    (2 * cpu_data->short_idles >= cpu_data->total ||
 	     latency_req < LATENCY_THRESHOLD_NS))
 		goto out_tick;
 
 	duration_ns = tick_nohz_get_sleep_length(&delta_tick);
 	cpu_data->sleep_length_ns = duration_ns;
-
-	/*
-	 * If the tick has been stopped and the closest timer is too far away,
-	 * update the selection to prevent the CPU from getting stuck in a
-	 * shallow idle state for too long.
-	 */
-	if (tick_nohz_tick_stopped() && duration_ns > SAFE_TIMER_RANGE_NS &&
-	    drv->states[idx].target_residency_ns < TICK_NSEC) {
-		/*
-		 * Look for the deepest enabled idle state with exit latency
-		 * within the PM QoS limit and with target residency within
-		 * duration_ns.
-		 */
-		for (i = constraint_idx; i > idx; i--) {
-			if (dev->states_usage[i].disable)
-				continue;
-
-			if (drv->states[i].target_residency_ns <= duration_ns) {
-				idx = i;
-				break;
-			}
-		}
-		return idx;
-	}
 
 	if (!idx)
 		goto out_tick;
@@ -515,7 +489,7 @@ static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 	 * total wakeup events, do not stop the tick.
 	 */
 	if (drv->states[idx].target_residency_ns < TICK_NSEC &&
-	    3 * cpu_data->tick_intercepts >= 2 * cpu_data->total)
+	    cpu_data->tick_intercepts > cpu_data->total / 2 + cpu_data->total / 8)
 		duration_ns = TICK_NSEC / 2;
 
 end:
@@ -551,9 +525,19 @@ static void teo_reflect(struct cpuidle_device *dev, int state)
 {
 	struct teo_cpu *cpu_data = this_cpu_ptr(&teo_cpus);
 
-	cpu_data->tick_wakeup = tick_nohz_idle_got_tick();
-
 	dev->last_state_idx = state;
+	if (dev->poll_time_limit ||
+	    (tick_nohz_idle_got_tick() && cpu_data->sleep_length_ns > TICK_NSEC)) {
+		/*
+		 * The wakeup was not "genuine", but triggered by one of the
+		 * safety nets.
+		 */
+		dev->poll_time_limit = false;
+		cpu_data->artificial_wakeup = true;
+	} else {
+		cpu_data->artificial_wakeup = false;
+	}
+>>>>>>> cb131cd92776 (UPSTREAM: cpuidle: governors: teo: Drop misguided target residency check)
 }
 
 /**

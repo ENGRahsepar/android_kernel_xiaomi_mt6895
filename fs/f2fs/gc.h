@@ -30,7 +30,6 @@
 /* Search max. number of dirty segments to select a victim segment */
 #define DEF_MAX_VICTIM_SEARCH 4096 /* covers 8GB */
 
-<<<<<<< HEAD
 struct f2fs_gc_kthread {
 	struct task_struct *f2fs_gc_task;
 	wait_queue_head_t gc_wait_queue_head;
@@ -51,8 +50,6 @@ struct f2fs_gc_kthread {
 						 */
 };
 
-=======
->>>>>>> v5.10.274
 struct gc_inode_list {
 	struct list_head ilist;
 	struct radix_tree_root iroot;

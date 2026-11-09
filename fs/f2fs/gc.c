@@ -148,9 +148,15 @@ next:
 
 int f2fs_start_gc_thread(struct f2fs_sb_info *sbi)
 {
-	struct f2fs_gc_kthread *gc_th = &sbi->gc_thread;
+	struct f2fs_gc_kthread *gc_th;
 	dev_t dev = sbi->sb->s_bdev->bd_dev;
 	int err = 0;
+
+	gc_th = f2fs_kmalloc(sbi, sizeof(struct f2fs_gc_kthread), GFP_KERNEL);
+	if (!gc_th) {
+		err = -ENOMEM;
+		goto out;
+	}
 
 	gc_th->urgent_sleep_time = DEF_GC_THREAD_URGENT_SLEEP_TIME;
 	gc_th->min_sleep_time = DEF_GC_THREAD_MIN_SLEEP_TIME;
@@ -166,13 +172,21 @@ int f2fs_start_gc_thread(struct f2fs_sb_info *sbi)
 			"f2fs_gc-%u:%u", MAJOR(dev), MINOR(dev));
 	if (IS_ERR(gc_th->f2fs_gc_task)) {
 		err = PTR_ERR(gc_th->f2fs_gc_task);
-		gc_th->f2fs_gc_task = NULL;
+		kfree(gc_th);
+		sbi->gc_thread = NULL;
 	}
 	set_task_ioprio(sbi->gc_thread->f2fs_gc_task,
 			IOPRIO_PRIO_VALUE(IOPRIO_CLASS_IDLE, 0));
 out:
-		return;
+	return err;
+}
 
+void f2fs_stop_gc_thread(struct f2fs_sb_info *sbi)
+{
+	struct f2fs_gc_kthread *gc_th = sbi->gc_thread;
+
+	if (!gc_th)
+		return;
 	kthread_stop(gc_th->f2fs_gc_task);
 	wake_up_all(&gc_th->fggc_wq);
 	kfree(gc_th);

@@ -638,7 +638,16 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
 	},
 #endif
 #ifdef CONFIG_ARM64_ERRATUM_2457168
-#ifdef CONFIG_ARM64_WORKAROUND_BROKEN_AMU_CONSTCNT	{
+	{
+		.desc = "ARM erratum 2457168",
+		.capability = ARM64_WORKAROUND_2457168,
+		.type = ARM64_CPUCAP_WEAK_LOCAL_CPU_FEATURE,
+		/* Cortex-A510 r0p0-r1p1 */
+		CAP_MIDR_RANGE(MIDR_CORTEX_A510, 0, 0, 1, 1)
+	},
+#endif
+#ifdef CONFIG_ARM64_WORKAROUND_BROKEN_AMU_CONSTCNT
+	{
 		.desc = "Broken AMU AMEVCNTR01 (const counter)",
 		.capability = ARM64_WORKAROUND_BROKEN_AMU_CONSTCNT,
 		.type = ARM64_CPUCAP_WEAK_LOCAL_CPU_FEATURE,

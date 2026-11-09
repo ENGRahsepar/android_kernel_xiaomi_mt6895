@@ -689,3 +689,39 @@ GitHub owner renamed `AKALIorg` → `ENGRahsepar` (Oct 2026; remotes/docs update
 
 | `b02bd1ca1` | **NoMount v2.0.0 + Droidspaces/LXC** — NoMount upgraded from v1.1.1 (keyring API) to v2.0.0 (patchless dcache hijack, Bloom filter child indexing, UID isolation, RCU-safe rule lookups) from maxsteeel/nomount@master. Droidspaces/LXC: all required GKI configs enabled in vendor fragment (namespaces, cgroups, netfilter, net_bridge, seccomp, devtmpfs, overlayfs, etc.). LXC kABI patches applied: ANDROID_KABI_RESERVE(6,7,8) in sched.h for SYSVIPC/IPC_NS/POSIX_MQUEUE ABI safety. lxc_support.patch applied to source (gki_defconfig + sched.h changes). |
 
+
+## 0.3.3 (current) — Linux 5.10.274 + ESK-Project sync + NoMount v2.0.0 + Droidspaces
+
+**Build VERIFIED:** `ESK-Reborn-5.10.274-KSU-SUSFS-accacd345fdb-AnyKernel3.zip` (27.2 MB)
+- Version string: `Linux version 5.10.274-ESK-Reborn_V0.3.3/accacd34`
+- Compiler: Android clang 22.0.2 (r596125), LTO thin
+- Configs verified in .config: `CONFIG_KSU=y`, `CONFIG_KSU_SUSFS=y` (SUSFS v2.3.0), `CONFIG_NOMOUNT=y`, `CONFIG_SYSVIPC=y`, `CONFIG_IPC_NS=y`, `CONFIG_PID_NS=y`, `CONFIG_UTS_NS=y`, `CONFIG_NET_NS=y`, `CONFIG_USER_NS=y`, `CONFIG_CGROUPS=y`, `CONFIG_CGROUP_DEVICE=y`, `CONFIG_SECCOMP=y`, `CONFIG_SECCOMP_FILTER=y`, `CONFIG_DEVTMPFS=y`, `CONFIG_OVERLAY_FS=y`, `CONFIG_BRIDGE=y`, `CONFIG_NF_NAT=y`, `CONFIG_MACVLAN=y`
+
+### Changes in this release
+| Area | Change |
+|---|---|
+| Base | **Linux 5.10.274** (from 5.10.272) — 521 upstream commits, 500 files, 17 conflicts resolved |
+| KABI | `ANDROID_KABI_RESERVE(6,7,8)` added for LXC (SYSVIPC/IPC_NS/POSIX_MQUEUE ABI safety); BORE reserves 1-4 intact |
+| NoMount | **v1.1.1 → v2.0.0** (maxsteeel/nomount@master bf1847f98) — patchless dcache hijack, Bloom-filter child indexing, UID isolation, RCU-safe rule lookups |
+| Droidspaces | All GKI container configs enabled in vendor fragment + `lxc_support.patch` applied to source |
+| ESK-Project sync | DTBO building + xaga/plato DTSIs, cpufreq-hw thermal pressure accounting, RCU NOCB kernel param (`rcu_nocbs=0-7`), disable RCU priority boosting, LZ4 fixes, **TEO cpuidle** upstream fixes (tick wakeup rework, intercept decay, state lookup simplification) |
+| localversion | `V0.3.2` → **`V0.3.3`** |
+
+### Merge-conflict fixes (5.10.274)
+- `fs/f2fs/` — restored pre-merge vendor versions (pointer-based `gc_thread` + GC_MERGE `fggc_wq`; upstream 274 embedded the struct and dropped `fggc_wq`)
+- `fs/nfsd/nfs4proc.c` — restored pre-merge vendor version (our nfsd lacks `nfsd_attrs_free`/`nfsd4_acl_to_attr`)
+- `net/core/{sock,filter,net_namespace}.c` — `net_cookie` is plain `u64` in upstream 274 (was `atomic64_t`); dropped `atomic64_read`/`atomic64_set`
+- `kernel/time/tick-broadcast.c` — restored pre-merge GKI variant (our tree uses `(dev, int cpu)` signature; upstream 274 dropped the cpu param)
+- `arch/arm64/kernel/cpu_errata.c` — restored `ARM64_ERRATUM_2457168` block + added upstream `ARM64_WORKAROUND_BROKEN_AMU_CONSTCNT` block
+- `include/linux/fsnotify_backend.h` — upstream `FSNOTIFY_CONN_FLAG_HAS_IREF` / `FSNOTIFY_CONN_FLAG_DESTROYING`
+
+### Builder fixes
+- `~/esk_builder/ci/package.sh` — zstd packaging failed when `Image.zst` already existed (zstd prompts to overwrite, aborts with stdin closed). Fixed: `rm -f Image.zst` + `zstd -f`
+- `uv` was missing on the build machine (required by `build.sh` dependency check) — installed to `~/.local/bin`
+
+### Open items (unchanged)
+- BakaSU fork `main` = upstream main `516d3e87`; `sync-susfs` = upstream main + upstream `sync-up` (`dc8e01e0`) merge → `ecda7c0e`
+- SUSFS fork `gki-android12-5.10-bakasu` = `ca7093a` (pinned pairing). Upstream SUSFS `gki-android12-5.10-dev` = `cba6103c` — **not yet evaluated for re-pairing**
+- MGLRU (ESK-Project main, ~70 commits) — still not ported
+- Vorpal/ESK v2.3 (Templar Linux7-Staging) — not ported; current governor = ESK v2.2
+

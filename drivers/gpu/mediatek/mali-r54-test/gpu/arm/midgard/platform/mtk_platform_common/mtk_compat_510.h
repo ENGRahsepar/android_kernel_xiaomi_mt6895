@@ -64,4 +64,13 @@ static inline int gpufreq_set_mfgsys_config(int config, int feature)
 #define LIMIT_POWERHAL LIMIT_PBM
 #endif
 
+/* Linux 5.10 has no dual-domain commit API. Commit the GPU domain only;
+ * the 5.10 backend derives the STACK OPP from its hardware constraint.
+ */
+static inline int gpufreq_dual_commit(int gpu_oppidx, int stack_oppidx)
+{
+	(void)stack_oppidx;
+	return gpufreq_commit(TARGET_GPU, gpu_oppidx);
+}
+
 #endif /* _MTK_COMPAT_510_H_ */

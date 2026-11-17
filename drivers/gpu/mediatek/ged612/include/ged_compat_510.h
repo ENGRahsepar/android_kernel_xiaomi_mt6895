@@ -66,16 +66,14 @@ static inline int gpufreq_set_mfgsys_config(int config, int feature)
 /* 6.12 added a POWERHAL limiter; map it onto the closest 5.10 limiter */
 #ifndef LIMIT_POWERHAL
 #define LIMIT_POWERHAL LIMIT_PBM
-/* 6.12 symbol namespaces: no-op on 5.10 */
-#ifndef MODULE_IMPORT_NS
-#define MODULE_IMPORT_NS(x)
 #endif
 
-#endif
-
-/* 6.12 symbol namespaces: no-op on 5.10 */
-#ifndef MODULE_IMPORT_NS
-#define MODULE_IMPORT_NS(x)
-#endif
+/* Compatibility implementations supplied by ged_compat_510.c. */
+unsigned int gpufreq_wrapper_ready(void);
+void MTKGPUQoS_mode_ratio(int mode);
+void set_gpu_pre_throttle(int value, int level);
+void set_gpu_pre_throttle_opp(int opp, int level);
+int mtk_ipi_send_compl_to_gpueb(int ipi_id, int opt, void *data, int len,
+				unsigned long timeout);
 
 #endif

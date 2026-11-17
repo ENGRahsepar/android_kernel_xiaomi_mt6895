@@ -69,10 +69,6 @@ static inline size_t strlcpy(char *dest, const char *src, size_t size)
 #endif
 #endif
 
-#ifndef rt_mutex_destroy
-#define rt_mutex_destroy(lock) do { } while (0)
-#endif
-
 /*
  * Include mali_kbase_defs.h first as this provides types needed by other local
  * header files.

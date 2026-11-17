@@ -240,7 +240,7 @@ struct kbase_platform_config *kbase_get_platform_config(void)
 	return &versatile_platform_config;
 }
 
-int mtk_platform_device_init(struct kbase_device *kbdev)
+int mtk_platform_pm_init(struct kbase_device *kbdev)
 {
 
 	if (!kbdev) {
@@ -254,4 +254,4 @@ int mtk_platform_device_init(struct kbase_device *kbdev)
 	return 0;
 }
 
-void mtk_platform_device_term(struct kbase_device *kbdev) { }
+void mtk_platform_pm_term(struct kbase_device *kbdev) { }

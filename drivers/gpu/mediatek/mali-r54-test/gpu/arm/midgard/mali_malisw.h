@@ -37,7 +37,9 @@
  * As a macro it may evaluate its arguments more than once.
  * Refer to MAX macro for more details
  */
+#ifndef MIN
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
+#endif
 
 /**
  * MAX - Return the greater of two values.
@@ -51,7 +53,9 @@
  * to retrieve the min and max of two values, consider using a conditional swap
  * instead.
  */
+#ifndef MAX
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
+#endif
 #endif
 
 /**

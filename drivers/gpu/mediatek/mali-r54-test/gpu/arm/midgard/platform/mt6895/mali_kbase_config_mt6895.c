@@ -21,7 +21,7 @@
 #include <mboot_params.h>
 #endif
 #if IS_ENABLED(CONFIG_MTK_GPU_SWPM_SUPPORT)
-#include <mtk_gpu_power_sspm_ipi.h>
+#include <mtk_ltr_pmu.h>
 #endif
 
 DEFINE_MUTEX(g_mfg_lock);
@@ -175,7 +175,7 @@ static int pm_callback_power_on(struct kbase_device *kbdev)
 	mutex_lock(&g_mfg_lock);
 	ret = pm_callback_power_on_nolock(kbdev);
 #if IS_ENABLED(CONFIG_MTK_GPU_SWPM_SUPPORT)
-	MTKGPUPower_model_resume();
+	MTK_LTR_gpu_pmu_resume();
 #endif
 	mtk_notify_gpu_power_change(1);
 	mutex_unlock(&g_mfg_lock);
@@ -188,7 +188,7 @@ static void pm_callback_power_off(struct kbase_device *kbdev)
 	mutex_lock(&g_mfg_lock);
 	mtk_notify_gpu_power_change(0);
 #if IS_ENABLED(CONFIG_MTK_GPU_SWPM_SUPPORT)
-	MTKGPUPower_model_suspend();
+	MTK_LTR_gpu_pmu_suspend();
 #endif
 	pm_callback_power_off_nolock(kbdev);
 	mutex_unlock(&g_mfg_lock);

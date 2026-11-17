@@ -39,10 +39,10 @@
 #include <platform/mtk_platform_common/mtk_platform_debug.h>
 #endif /* CONFIG_MALI_MTK_DEBUG_DUMP || CONFIG_MALI_MTK_MMAP_LOGGING */
 
+#include <platform/mtk_platform_common/mtk_platform_dvfs.h>
 #if IS_ENABLED(CONFIG_MALI_MTK_PROC_FS)
 #include <linux/proc_fs.h>
 
-#include <platform/mtk_platform_common/mtk_platform_dvfs.h>
 #if IS_ENABLED(CONFIG_MALI_MIDGARD_DVFS) && IS_ENABLED(CONFIG_MALI_MTK_DVFS_POLICY)
 #if IS_ENABLED(CONFIG_MALI_MTK_GPU_DVFS_HINT_26M_LOADING)
 #include <platform/mtk_platform_common/mtk_platform_dvfs_hint_26m_perf_cnting.h>

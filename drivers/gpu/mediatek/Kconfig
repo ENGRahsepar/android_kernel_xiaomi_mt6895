@@ -129,9 +129,8 @@ config MTK_GPU_R54P1
 	  Select the isolated Arm Mali R54P1 CSF driver, its 5.10
 	  GED/GPUEB backports, and the matching MTK platform layer.
 
-if MTK_GPU_R54P1
-source "drivers/gpu/mediatek/mali-r54-test/base/arm/Kconfig"
-source "drivers/gpu/mediatek/mali-r54-test/gpu/arm/Kconfig"
-else
 source "drivers/gpu/mediatek/mali-valhall/base/arm/Kconfig"
+
+if MTK_GPU_R54P1
+source "drivers/gpu/mediatek/mali-r54-test/gpu/arm/Kconfig"
 endif

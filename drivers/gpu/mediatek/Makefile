@@ -25,9 +25,16 @@ else ifeq ($(MTK_PLATFORM),mt6853)
 subdir-ccflags-y += -DCONFIG_GPU_MT6853
 endif
 
-obj-$(CONFIG_MTK_GPU_SUPPORT) += ged/
 obj-$(CONFIG_MTK_GPU_SUPPORT) += hal/
 obj-$(CONFIG_MTK_GPU_SUPPORT) += gpufreq/
 obj-$(CONFIG_MTK_GPU_SUPPORT) += gpu_bm/
-obj-$(CONFIG_MTK_GPU_SUPPORT)+= gpueb/
+
+ifeq ($(CONFIG_MTK_GPU_R54P1),y)
+obj-$(CONFIG_MTK_GPU_SUPPORT) += ged612/
+obj-$(CONFIG_MTK_GPU_SUPPORT) += gpueb612/
+obj-$(CONFIG_MTK_GPU_SUPPORT) += mali-r54-test/
+else
+obj-$(CONFIG_MTK_GPU_SUPPORT) += ged/
+obj-$(CONFIG_MTK_GPU_SUPPORT) += gpueb/
 obj-$(CONFIG_MTK_GPU_SUPPORT) += mali-valhall/
+endif

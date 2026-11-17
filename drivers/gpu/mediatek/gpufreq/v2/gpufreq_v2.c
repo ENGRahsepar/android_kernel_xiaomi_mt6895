@@ -1508,6 +1508,7 @@ done:
 
 	return ret;
 }
+EXPORT_SYMBOL(gpufreq_fix_target_oppidx);
 
 /***********************************************************************************
  * Function Name      : gpufreq_fix_custom_freq_volt
@@ -1990,6 +1991,7 @@ static int gpufreq_wrapper_pdrv_probe(struct platform_device *pdev)
 
 	of_property_read_u32(of_wrapper, "dual-buck", &g_dual_buck);
 	of_property_read_u32(of_wrapper, "gpueb-support", &g_gpueb_support);
+	/* xaga 移植注：保持 EB 模式（与 gpufreq_mt6895.c 同步的决策，见彼处注释） */
 
 	/* init gpueb setting if gpueb is enabled */
 	if (g_gpueb_support) {

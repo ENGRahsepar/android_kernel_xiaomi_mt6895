@@ -121,4 +121,17 @@ config MTK_GPU_MT6983_SUPPORT
 	  and set N to disable.
 	  It is additional config to separate platforms.
 
+config MTK_GPU_R54P1
+	bool "Use Arm Mali R54P1 GPU stack"
+	depends on MTK_GPU_SUPPORT
+	default n
+	help
+	  Select the isolated Arm Mali R54P1 CSF driver, its 5.10
+	  GED/GPUEB backports, and the matching MTK platform layer.
+
+if MTK_GPU_R54P1
+source "drivers/gpu/mediatek/mali-r54-test/base/arm/Kconfig"
+source "drivers/gpu/mediatek/mali-r54-test/gpu/arm/Kconfig"
+else
 source "drivers/gpu/mediatek/mali-valhall/base/arm/Kconfig"
+endif

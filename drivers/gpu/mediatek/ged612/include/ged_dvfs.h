@@ -7,6 +7,7 @@
 #define __GED_DVFS_H__
 
 #include <linux/types.h>
+#include <linux/version.h>
 #include "ged_type.h"
 #include "ged_log.h"
 

@@ -64,6 +64,13 @@ static inline int gpufreq_set_mfgsys_config(int config, int feature)
 #define LIMIT_POWERHAL LIMIT_PBM
 #endif
 
+/* GED 6.12 callback pointers; the 5.10 implementation fills these in. */
+static unsigned long (*ged_get_last_commit_idx_fp)(void);
+static unsigned long (*ged_get_last_commit_top_idx_fp)(void);
+static unsigned long (*ged_get_last_commit_stack_idx_fp)(void);
+static void (*ged_notify_gpu_fix_opp_fp)(int);
+static void (*ged_notify_gpu_fix_freq_volt_fp)(unsigned int, unsigned int);
+
 /* Implementations supplied by ged_compat_510.c or gpueb612. */
 unsigned int gpufreq_wrapper_ready(void);
 int gpufreq_get_cur_temperature(void);

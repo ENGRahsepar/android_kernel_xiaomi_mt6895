@@ -18,6 +18,7 @@
 #include <linux/anon_inodes.h>
 
 #include <linux/kmemleak.h>
+#include <linux/module.h>
 
 struct GEEntry {
 	uint64_t unique_id;

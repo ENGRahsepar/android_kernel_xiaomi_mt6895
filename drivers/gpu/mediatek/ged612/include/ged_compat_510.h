@@ -70,6 +70,7 @@ static inline int gpufreq_set_mfgsys_config(int config, int feature)
 
 /* Compatibility implementations supplied by ged_compat_510.c. */
 unsigned int gpufreq_wrapper_ready(void);
+int gpufreq_get_cur_temperature(void);
 void MTKGPUQoS_mode_ratio(int mode);
 void set_gpu_pre_throttle(int value, int level);
 void set_gpu_pre_throttle_opp(int opp, int level);

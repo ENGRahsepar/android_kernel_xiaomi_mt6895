@@ -540,6 +540,7 @@ out:
 int kbase_install_interrupts(struct kbase_device *kbdev)
 {
 	u32 irq_index;
+	int result;
 
 	if (kbdev->gpu_props.gpu_id.arch_id >= GPU_ID_ARCH_MAKE(14, 8, 0)) {
 		if (kbdev->nr_irqs != 1) {
@@ -555,7 +556,7 @@ int kbase_install_interrupts(struct kbase_device *kbdev)
 	for (irq_index = 0; irq_index < kbdev->nr_irqs; irq_index++) {
 		/* set period for burst irq */
 		irq_mon_aee_period_set(kbdev->irqs[irq_index].irq, MALI_IRQ_PERIOD_BURST);
-		const int result = request_irq(kbdev->irqs[irq_index].irq,
+		result = request_irq(kbdev->irqs[irq_index].irq,
 					       kbase_get_interrupt_handler(kbdev, irq_index),
 					       kbdev->irqs[irq_index].flags | IRQF_SHARED,
 					       dev_name(kbdev->dev), kbase_tag(kbdev, irq_index));

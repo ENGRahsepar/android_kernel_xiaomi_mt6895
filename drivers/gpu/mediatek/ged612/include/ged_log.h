@@ -6,6 +6,8 @@
 #ifndef __GED_LOG_H__
 #define __GED_LOG_H__
 
+#include <linux/string.h>
+
 #include <linux/string_helpers.h>
 #include "ged_type.h"
 

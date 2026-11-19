@@ -840,7 +840,8 @@ static int get_gpueb_gpr_val_v1(struct platform_device *pdev, uint32_t gpr_id, u
 		return -ENODEV;
 	}
 
-	of_property_read_u32(np, "gpr-offset", &gpr_offset);
+	if (of_property_read_u32(np, "gpr-offset", &gpr_offset))
+		of_property_read_u32(np, "gpr_offset", &gpr_offset);
 
 	if(!gpr_offset) {
 		dev_err(&pdev->dev, "can't have GPR offset access\n");
@@ -941,9 +942,13 @@ static int mtk_protected_memory_allocator_probe(struct platform_device *pdev)
 		dev_info(&pdev->dev, "Skip init gpu iommu\n");
 	}
 #endif /* CONFIG_MALI_MTK_GPU_IOMMU */
-	of_property_read_u32(np, "gmpu-table-size", &gmpu_table_size);
-	of_property_read_u32(np, "gpr-id", &gpr_id);
-	of_property_read_u32(np, "protected-reserve-size", &psize);
+	/* xaga DTS uses the R32 underscore names; OPPO uses dashed names. */
+	if (of_property_read_u32(np, "gmpu-table-size", &gmpu_table_size))
+		of_property_read_u32(np, "gmpu_table_size", &gmpu_table_size);
+	if (of_property_read_u32(np, "gpr-id", &gpr_id))
+		of_property_read_u32(np, "gpr_id", &gpr_id);
+	if (of_property_read_u32(np, "protected-reserve-size", &psize))
+		of_property_read_u32(np, "protected_reserve_size", &psize);
 
 	if(!psize) {
 		dev_err(&pdev->dev, "can't find reserved-memory\n");

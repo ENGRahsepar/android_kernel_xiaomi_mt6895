@@ -54,6 +54,7 @@ int mmap_file(struct file *file, struct vm_area_struct *vma);
 void vma_close(struct vm_area_struct *vma);
 
 vm_fault_t do_swap_page(struct vm_fault *vmf);
+void activate_page(struct page *page);
 
 #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
 extern struct vm_area_struct *get_vma(struct mm_struct *mm,
@@ -75,7 +76,7 @@ void unmap_page_range(struct mmu_gather *tlb,
 			     struct zap_details *details);
 
 void do_page_cache_ra(struct readahead_control *, unsigned long nr_to_read,
-		unsigned long lookahead_size);
+		unsigned long lookahead_size, bool forced);
 void force_page_cache_ra(struct readahead_control *, struct file_ra_state *,
 		unsigned long nr);
 static inline void force_page_cache_readahead(struct address_space *mapping,

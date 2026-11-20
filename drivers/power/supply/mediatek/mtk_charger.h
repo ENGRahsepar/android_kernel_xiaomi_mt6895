@@ -464,6 +464,7 @@ struct mtk_charger {
 	int ffc_high_tbat;
 	int ffc_high_soc;
 	int sic_current;
+	bool force_fast_charge;
 	bool en_floatgnd;
 	int charge_status;
 
@@ -732,8 +733,11 @@ extern int get_charger_input_current(struct mtk_charger *info,
 extern int get_charger_zcv(struct mtk_charger *info,
 	struct charger_device *chg);
 extern void _wake_up_charger(struct mtk_charger *info);
+#define FORCE_FAST_CHARGE_FCC 6000 /* mA */
 extern int charger_manager_get_sic_current(void);
 extern void charger_manager_set_sic_current(int sic_current);
+extern bool charger_manager_get_force_fast_charge(void);
+extern void charger_manager_set_force_fast_charge(bool enable);
 extern void night_charging_set_flag(bool night_charging);
 extern int night_charging_get_flag(void);
 extern void set_soft_reset_status(int val);

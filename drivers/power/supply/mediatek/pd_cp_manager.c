@@ -422,6 +422,11 @@ static bool pdm_taper_charge(struct usbpd_pm *pdpm)
 	if (pdpm->charge_full)
 		return true;
 
+	if (charger_manager_get_force_fast_charge()) {
+		pdpm->taper_count = 0;
+		return false;
+	}
+
 #if  defined(CONFIG_TARGET_PRODUCT_ARISTOTLE)
 	if (pdpm->tbat > 100 && pdpm->tbat < 150)
 		cv_vbat = cv_vbat - 10;
@@ -528,9 +533,16 @@ static void pdm_update_status(struct usbpd_pm *pdpm)
 
 	pdpm->night_charging = night_charging_get_flag();
 
+	if (charger_manager_get_force_fast_charge() && pdpm->tbat >= 500) {
+		pdm_err("battery reached 50 C, disabling forced fast charge\n");
+		charger_manager_set_force_fast_charge(false);
+	}
+
 	pdpm->step_chg_fcc = get_client_vote(pdpm->fcc_votable, STEP_CHARGE_VOTER);
 	pdpm->thermal_limit_fcc = min(get_client_vote(pdpm->fcc_votable, THERMAL_VOTER), pdpm->dts_config.max_fcc);
 	pdpm->target_fcc = min(get_effective_result(pdpm->fcc_votable), pdpm->dts_config.max_fcc);
+	if (charger_manager_get_force_fast_charge())
+		pdpm->target_fcc = min(FORCE_FAST_CHARGE_FCC, pdpm->dts_config.max_fcc);
 	if (!pdpm->pd_verifed && pdpm->target_fcc > 5800)
 		pdpm->target_fcc = 5800;
 
@@ -555,7 +567,8 @@ static void pdm_bypass_check(struct usbpd_pm *pdpm)
 #if  defined (CONFIG_TARGET_PRODUCT_YUECHU)
         bypass_fcc = pdpm->target_fcc;
 #else
-        bypass_fcc = pdpm->thermal_limit_fcc;
+        bypass_fcc = charger_manager_get_force_fast_charge()
+                ? pdpm->target_fcc : pdpm->thermal_limit_fcc;
 #endif
 	if (pdpm->cp_work_mode == SC8561_FORWARD_4_1_CHARGER_MODE)
 			res = 4;
@@ -842,7 +855,7 @@ static int pdm_check_condition(struct usbpd_pm *pdpm)
 	} else if (pdpm->target_fcc < min_thermal_limit_fcc) {
 		pdm_err("PDM_SM_HOLD for fcc target_fcc=%d\n", pdpm->target_fcc);
 		return PDM_SM_HOLD;
-	} else if ((pdpm->state == PD_PM_STATE_ENTRY) && ((pdpm->soc > pdpm->dts_config.high_soc)
+	} else if (!charger_manager_get_force_fast_charge() && (pdpm->state == PD_PM_STATE_ENTRY) && ((pdpm->soc > pdpm->dts_config.high_soc)
 		|| (is_between(100, 200, pdpm->cycle_count) && (pdpm->soc > 92))
 		|| ((pdpm->cycle_count > 200) && (pdpm->soc > 90)))) {
 		pdm_err("PDM_SM_EXIT state=%d,soc=%d,vbat=%d\n", pdpm->state, pdpm->soc, pdpm->vbat);
@@ -903,7 +916,7 @@ static bool pdm_handle_sm(struct usbpd_pm *pdpm)
 			break;
 		} else {
 			pdm_move_sm(pdpm, PD_PM_STATE_INIT_VBUS);
-			if (pdpm->target_fcc > 6000 && pdpm->cp_4_1_mode) {
+			if (pdpm->target_fcc >= FORCE_FAST_CHARGE_FCC && pdpm->cp_4_1_mode) {
 				pdpm->cp_work_mode = SC8561_FORWARD_4_1_CHARGER_MODE;
 				charger_dev_cp_set_mode(pdpm->master_dev, SC8561_FORWARD_4_1_CHARGER_MODE);
 				charger_dev_cp_set_mode(pdpm->slave_dev, SC8561_FORWARD_4_1_CHARGER_MODE);

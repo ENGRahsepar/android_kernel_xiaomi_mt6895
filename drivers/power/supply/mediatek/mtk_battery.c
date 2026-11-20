@@ -2336,6 +2336,22 @@ static int night_charging_set(struct mtk_battery *gm,
 	return 0;
 }
 
+static int force_fast_charge_get(struct mtk_battery *gm,
+	struct mtk_battery_sysfs_field_info *attr,
+	int *val)
+{
+	*val = charger_manager_get_force_fast_charge();
+	return 0;
+}
+
+static int force_fast_charge_set(struct mtk_battery *gm,
+	struct mtk_battery_sysfs_field_info *attr,
+	int val)
+{
+	charger_manager_set_force_fast_charge(!!val);
+	return 0;
+}
+
 static int input_suspend_get(struct mtk_battery *gm,
 	struct mtk_battery_sysfs_field_info *attr,
 	int *val)
@@ -2702,6 +2718,7 @@ static struct mtk_battery_sysfs_field_info battery_sysfs_field_tbl[] = {
 	BAT_SYSFS_FIELD_RO(otg_ui_support, BAT_PROP_OTG_UI_SUPPORT),
 	BAT_SYSFS_FIELD_RO(cid_status, BAT_PROP_CID_STATUS),
 	BAT_SYSFS_FIELD_RW(cc_toggle, BAT_PROP_CC_TOGGLE),
+	BAT_SYSFS_FIELD_RW(force_fast_charge, BAT_PROP_FORCE_FAST_CHARGE),
 };
 
 int battery_get_property(enum battery_property bp,

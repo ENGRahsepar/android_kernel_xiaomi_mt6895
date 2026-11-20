@@ -119,6 +119,7 @@ enum battery_property {
 	BAT_PROP_OTG_UI_SUPPORT,
 	BAT_PROP_CID_STATUS,
 	BAT_PROP_CC_TOGGLE,
+	BAT_PROP_FORCE_FAST_CHARGE,
 };
 
 struct battery_data {

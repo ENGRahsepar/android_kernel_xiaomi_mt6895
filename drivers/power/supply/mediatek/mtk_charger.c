@@ -764,6 +764,27 @@ void charger_manager_set_sic_current(int sic_current)
 }
 EXPORT_SYMBOL(charger_manager_set_sic_current);
 
+bool charger_manager_get_force_fast_charge(void)
+{
+	return pinfo != NULL && pinfo->force_fast_charge;
+}
+EXPORT_SYMBOL(charger_manager_get_force_fast_charge);
+
+void charger_manager_set_force_fast_charge(bool enable)
+{
+	if (pinfo == NULL)
+		return;
+
+	pinfo->force_fast_charge = enable;
+	if (!enable && pinfo->sic_current == FORCE_FAST_CHARGE_FCC)
+		charger_manager_set_sic_current(pinfo->max_fcc);
+
+	chr_err("%s enable=%d\n", __func__, enable);
+	if (pinfo->usb_psy)
+		power_supply_changed(pinfo->usb_psy);
+}
+EXPORT_SYMBOL(charger_manager_set_force_fast_charge);
+
 void night_charging_set_flag(bool night_charging)
 {
 	if(pinfo == NULL)

@@ -5478,10 +5478,11 @@ static struct mem_cgroup *mem_cgroup_alloc(void)
 	INIT_LIST_HEAD(&memcg->deferred_split_queue.split_queue);
 	memcg->deferred_split_queue.split_queue_len = 0;
 #endif
+	/* Initialize before the memcg is visible to concurrent mm additions. */
+	lru_gen_init_memcg(memcg);
 	spin_lock(&memcg_idr_lock);
 	idr_replace(&mem_cgroup_idr, memcg, memcg->id.id);
 	spin_unlock(&memcg_idr_lock);
-	lru_gen_init_memcg(memcg);
 	trace_android_vh_mem_cgroup_alloc(memcg);
 	return memcg;
 fail:

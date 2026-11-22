@@ -2182,6 +2182,47 @@ static bool compr_l_config_AFBC_V1_2(struct mtk_ddp_comp *comp,
 		return 0;
 	}
 
+	/*
+	 * The MediaTek legacy RGB888 stride can describe a different AFBC
+	 * layout from the Mali plane metadata. Repair only the exact
+	 * undersized legacy-layout signature; valid original layouts and all
+	 * other formats keep their reported pitch.
+	 */
+	if ((fmt == DRM_FORMAT_RGB888 || fmt == DRM_FORMAT_BGR888) &&
+	    state->base.fb && pending->size) {
+		unsigned int arm_pitch =
+			ALIGN_TO(state->base.fb->width, tile_w) * Bpp;
+		unsigned int legacy_pitch =
+			ALIGN_TO(state->base.fb->width, 64) * Bpp;
+		size_t legacy_linear_size = (size_t)legacy_pitch * vpitch;
+
+		if (pitch == legacy_pitch && pitch != arm_pitch &&
+		    pending->size == PAGE_ALIGN(legacy_linear_size)) {
+			unsigned int arm_tiles =
+				ALIGN_TO(arm_pitch / Bpp, tile_w) *
+				ALIGN_TO(vpitch, tile_h) / (tile_w * tile_h);
+			unsigned int legacy_tiles =
+				ALIGN_TO(pitch / Bpp, tile_w) *
+				ALIGN_TO(vpitch, tile_h) / (tile_w * tile_h);
+			size_t arm_size =
+				ALIGN_TO(arm_tiles * AFBC_V1_2_HEADER_SIZE_PER_TILE_BYTES,
+					 AFBC_V1_2_HEADER_ALIGN_BYTES) +
+				(size_t)arm_tiles * tile_body_size;
+			size_t legacy_size =
+				ALIGN_TO(legacy_tiles * AFBC_V1_2_HEADER_SIZE_PER_TILE_BYTES,
+					 AFBC_V1_2_HEADER_ALIGN_BYTES) +
+				(size_t)legacy_tiles * tile_body_size;
+
+			if (pending->size >= arm_size && pending->size < legacy_size) {
+				DDPDBG("%s:%d, RGB888 AFBC legacy pitch:%u->%u, "
+				       "fb_width:%u, size:0x%zx\n",
+				       __func__, __LINE__, pitch, arm_pitch,
+				       state->base.fb->width, pending->size);
+				pitch = arm_pitch;
+			}
+		}
+	}
+
 	/* 2. pre-calculation */
 	src_buf_tile_num = ALIGN_TO(pitch / Bpp, tile_w) *
 	    ALIGN_TO(vpitch, tile_h);
